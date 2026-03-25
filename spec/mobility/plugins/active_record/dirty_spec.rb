@@ -511,4 +511,29 @@ describe Mobility::Plugins::ActiveRecord::Dirty, orm: :active_record, type: :plu
       expect(instance.changed_attribute_names_to_save).to match_array(%w[title_en title_ja published])
     end
   end
+
+  describe "saved_change_to_attribute? / will_save_change_to_attribute? with keyword options on non-translated columns" do
+    it "delegates from:/to: to ActiveRecord for saved_change_to_attribute? after save" do
+      skip "requires ActiveRecord 5.1+" unless ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR > 0
+
+      Mobility.locale = :en
+      instance = model_class.create!(title: "Hello", slug: "first")
+
+      instance.update!(slug: "second")
+
+      expect(instance.saved_change_to_attribute?(:slug, from: "first", to: "second")).to eq(true)
+      expect(instance.saved_change_to_attribute?(:slug, from: "first", to: "wrong")).to eq(false)
+    end
+
+    it "delegates from:/to: to ActiveRecord for will_save_change_to_attribute? before save" do
+      skip "requires ActiveRecord 5.1+" unless ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR > 0
+
+      Mobility.locale = :en
+      instance = model_class.create!(title: "Hello", slug: "steady")
+
+      instance.slug = "next"
+      expect(instance.will_save_change_to_attribute?(:slug, from: "steady", to: "next")).to eq(true)
+      expect(instance.will_save_change_to_attribute?(:slug, from: "steady", to: "wrong")).to eq(false)
+    end
+  end
 end
